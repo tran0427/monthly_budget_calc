@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly Budget Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg-primary: #0c0e14;
+  --bg-secondary: #13161f;
+  --bg-card: #181c28;
+  --bg-card-hover: #1e2233;
+  --bg-input: #0f1119;
+  --border: #252a3a;
+  --border-focus: #6c5ce7;
+  --text-primary: #e8eaf0;
+  --text-secondary: #8b90a5;
+  --text-muted: #5a5f75;
+  --accent: #6c5ce7;
+  --accent-glow: rgba(108, 92, 231, 0.25);
+  --accent-soft: rgba(108, 92, 231, 0.12);
+  --green: #00d68f;
+  --green-soft: rgba(0, 214, 143, 0.12);
+  --yellow: #f0b429;
+  --yellow-soft: rgba(240, 180, 41, 0.12);
+  --red: #ff6b6b;
+  --red-soft: rgba(255, 107, 107, 0.12);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --transition: 0.2s ease;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-primary: #f0f1f5;
+    --bg-secondary: #e8e9ef;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f7f7fa;
+    --bg-input: #f0f1f5;
+    --border: #dcdee6;
+    --border-focus: #6c5ce7;
+    --text-primary: #1a1c24;
+    --text-secondary: #6b7085;
+    --text-muted: #9ca0b4;
+    --accent: #6c5ce7;
+    --accent-glow: rgba(108, 92, 231, 0.18);
+    --accent-soft: rgba(108, 92, 231, 0.08);
+    --green: #0fba7a;
+    --green-soft: rgba(15, 186, 122, 0.1);
+    --yellow: #d4990a;
+    --yellow-soft: rgba(212, 153, 10, 0.1);
+    --red: #e54545;
+    --red-soft: rgba(229, 69, 69, 0.1);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.1);
+  }
+}
+
+html { font-size: 16px; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* ── Header ── */
+.header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  position: relative;
+}
+.header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--accent), #a29bfe);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.25rem;
+}
+.title-input {
+  background: none;
+  border: none;
+  outline: none;
+  font-family: 'Outfit', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--accent), #a29bfe);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+  width: 100%;
+  border-bottom: 2px solid transparent;
+  transition: border-color var(--transition);
+  padding-bottom: 2px;
+}
+.title-input::placeholder {
+  background: linear-gradient(135deg, var(--accent), #a29bfe);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0.5;
+}
+.title-input:hover { border-bottom-color: var(--border); }
+.title-input:focus { border-bottom-color: var(--accent); }
+.header .subtitle {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Save Badge ── */
+.save-badge {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--green);
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 100;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+}
+.save-badge.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Income Section ── */
+.income-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+.income-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.income-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.85rem;
+  transition: border-color var(--transition);
+}
+.income-input-wrap:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.income-input-wrap .dollar {
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+.income-input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  width: 120px;
+  text-align: right;
+}
+
+/* ── Summary Cards ── */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition), box-shadow var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.summary-card:nth-child(1)::before { background: var(--accent); }
+.summary-card:nth-child(2)::before { background: var(--yellow); }
+.summary-card:nth-child(3)::before { background: var(--green); }
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.summary-card .label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+.summary-card .value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.summary-card .value.accent { color: var(--accent); }
+.summary-card .value.yellow { color: var(--yellow); }
+.summary-card .value.positive { color: var(--green); }
+.summary-card .value.negative { color: var(--red); }
+
+/* ── Table ── */
+.table-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.5rem;
+}
+.table-header {
+  display: grid;
+  grid-template-columns: 1fr 120px 120px 110px 40px;
+  gap: 0;
+  padding: 0.85rem 1.25rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+.table-header span {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.table-header span:nth-child(2),
+.table-header span:nth-child(3),
+.table-header span:nth-child(4) {
+  text-align: right;
+}
+.table-header span:nth-child(5) { text-align: center; }
+
+.category-row {
+  display: grid;
+  grid-template-columns: 1fr 120px 120px 110px 40px;
+  gap: 0;
+  padding: 0.65rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  transition: background var(--transition);
+  animation: rowIn 0.3s ease;
+}
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.category-row:last-child { border-bottom: none; }
+.category-row:hover { background: var(--bg-card-hover); }
+
+.cat-name-cell { display: flex; flex-direction: column; gap: 0.35rem; padding-right: 1rem; }
+.cat-name-input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  width: 100%;
+  padding: 0.15rem 0;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--transition);
+}
+.cat-name-input:hover { border-bottom-color: var(--border); }
+.cat-name-input:focus { border-bottom-color: var(--accent); }
+
+/* Progress bar */
+.progress-track {
+  width: 100%;
+  height: 4px;
+  background: var(--bg-input);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1), background 0.3s;
+  min-width: 0;
+}
+.progress-fill.green { background: var(--green); }
+.progress-fill.yellow { background: var(--yellow); }
+.progress-fill.red { background: var(--red); }
+
+.money-input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  width: 100%;
+  text-align: right;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--transition);
+}
+.money-input:hover { border-bottom-color: var(--border); }
+.money-input:focus { border-bottom-color: var(--accent); }
+
+.left-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: right;
+  padding-right: 0.25rem;
+}
+.left-value.positive { color: var(--green); }
+.left-value.negative { color: var(--red); }
+.left-value.zero { color: var(--text-muted); }
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.25rem;
+  border-radius: 6px;
+  transition: all var(--transition);
+  text-align: center;
+  opacity: 0;
+}
+.category-row:hover .delete-btn { opacity: 1; }
+.delete-btn:hover { color: var(--red); background: var(--red-soft); }
+
+/* ── Add Row ── */
+.add-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+.add-section .section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.85rem;
+}
+.add-row {
+  display: grid;
+  grid-template-columns: 1fr 140px 140px auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+.add-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.85rem;
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.add-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.add-input.mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  text-align: right;
+}
+.add-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+.add-btn:hover {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+.add-btn:active { transform: scale(0.93); }
+
+/* ── Action Buttons ── */
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.action-btn {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+.action-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: var(--shadow-md);
+}
+.action-btn:active { transform: scale(0.98); }
+
+/* ── Confirm Dialog ── */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.dialog-overlay.active { opacity: 1; pointer-events: all; }
+.dialog-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  max-width: 380px;
+  width: 90%;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  transform: scale(0.95);
+  transition: transform 0.2s;
+}
+.dialog-overlay.active .dialog-box { transform: scale(1); }
+.dialog-box p {
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.dialog-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+.dialog-btn {
+  padding: 0.55rem 1.5rem;
+  border-radius: var(--radius-sm);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: all var(--transition);
+}
+.dialog-btn.cancel {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+.dialog-btn.cancel:hover { background: var(--bg-card-hover); }
+.dialog-btn.confirm {
+  background: var(--red);
+  color: #fff;
+  border-color: var(--red);
+}
+.dialog-btn.confirm:hover { opacity: 0.9; }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .container { padding: 1.25rem 1rem 3rem; }
+  .header h1 { font-size: 1.5rem; }
+  .summary-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+  .summary-card .value { font-size: 1.35rem; }
+  .table-header, .category-row {
+    grid-template-columns: 1fr 90px 90px 80px 32px;
+    padding: 0.6rem 0.85rem;
+  }
+  .add-row { grid-template-columns: 1fr; }
+  .add-btn { width: 100%; }
+  .income-section { flex-direction: column; align-items: stretch; }
+  .delete-btn { opacity: 0.5; }
+}
+</style>
+</head>
+<body>
+
+<div class="save-badge" id="saveBadge">✓ Saved</div>
+
+<div class="dialog-overlay" id="dialogOverlay">
+  <div class="dialog-box">
+    <p id="dialogMsg"></p>
+    <div class="dialog-actions">
+      <button class="dialog-btn cancel" id="dialogCancel">Cancel</button>
+      <button class="dialog-btn confirm" id="dialogConfirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="header">
+    <h1><input type="text" id="titleInput" class="title-input" placeholder="Monthly Budget" spellcheck="false"></h1>
+    <div class="subtitle">Track &middot; Plan &middot; Control</div>
+  </div>
+
+  <!-- Income -->
+  <div class="income-section">
+    <span class="income-label">Take-Home Pay</span>
+    <div class="income-input-wrap">
+      <span class="dollar">$</span>
+      <input type="text" class="income-input" id="incomeInput" inputmode="decimal">
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="label">Total Budgeted</div>
+      <div class="value accent" id="totalBudgeted">$0</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Spent So Far</div>
+      <div class="value yellow" id="totalSpent">$0</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Remaining</div>
+      <div class="value" id="totalRemaining">$0</div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-header">
+      <span>Category</span>
+      <span>Budgeted</span>
+      <span>Actual</span>
+      <span>Left</span>
+      <span></span>
+    </div>
+    <div id="categoryRows"></div>
+  </div>
+
+  <!-- Add Category -->
+  <div class="add-section">
+    <div class="section-label">Add a category</div>
+    <div class="add-row">
+      <input type="text" class="add-input" id="addName" placeholder="Category name">
+      <input type="text" class="add-input mono" id="addBudget" placeholder="$0.00" inputmode="decimal">
+      <input type="text" class="add-input mono" id="addActual" placeholder="$0.00" inputmode="decimal">
+      <button class="add-btn" id="btnAdd" title="Add category">+</button>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="action-btn" id="btnReset">Reset to defaults</button>
+    <button class="action-btn" id="btnClear">Clear actuals</button>
+  </div>
+
+</div>
+
+<script>
+const STORAGE_KEY = 'budgetTrackerData_v2';
+
+const DEFAULT_TITLE = 'Monthly Budget';
+const DEFAULT_INCOME = 4500;
+const DEFAULT_CATEGORIES = [
+  { name: 'Rent', budgeted: 1725, actual: 1725 },
+  { name: 'Utilities', budgeted: 200, actual: 180 },
+  { name: 'Auto insurance', budgeted: 188, actual: 188 },
+  { name: 'Student loan', budgeted: 316, actual: 316 },
+  { name: 'Credit cards (all minimums)', budgeted: 460, actual: 460 },
+  { name: 'Private school tuition', budgeted: 850, actual: 850 },
+  { name: 'Gymnastics', budgeted: 240, actual: 240 },
+  { name: 'Dance (incl. technique classes)', budgeted: 300, actual: 207 },
+  { name: 'Sweet 16 decorator', budgeted: 200, actual: 200 },
+  { name: 'Internet', budgeted: 50, actual: 50 },
+  { name: 'Cell phone', budgeted: 70, actual: 70 },
+  { name: 'Subscriptions', budgeted: 26, actual: 26 },
+  { name: 'Food (groceries + eating out)', budgeted: 380, actual: 380 },
+  { name: 'Misc', budgeted: 150, actual: 0 },
+];
+
+let state = loadState();
+
+function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.income !== undefined && Array.isArray(parsed.categories)) {
+        if (!parsed.title) parsed.title = DEFAULT_TITLE;
+        return parsed;
+      }
+    }
+  } catch(e) {}
+  return { title: DEFAULT_TITLE, income: DEFAULT_INCOME, categories: deepClone(DEFAULT_CATEGORIES) };
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  showSaveBadge();
+}
+
+let saveBadgeTimeout;
+function showSaveBadge() {
+  const badge = document.getElementById('saveBadge');
+  badge.classList.add('visible');
+  clearTimeout(saveBadgeTimeout);
+  saveBadgeTimeout = setTimeout(() => badge.classList.remove('visible'), 1500);
+}
+
+function fmt(n) {
+  return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function parseMoney(str) {
+  const n = parseFloat(String(str).replace(/[^0-9.\-]/g, ''));
+  return isNaN(n) ? 0 : Math.round(n * 100) / 100;
+}
+
+function getProgressClass(actual, budgeted) {
+  if (budgeted <= 0) return actual > 0 ? 'red' : 'green';
+  const pct = actual / budgeted;
+  if (pct <= 0.7) return 'green';
+  if (pct <= 1.0) return 'yellow';
+  return 'red';
+}
+
+function getProgressPct(actual, budgeted) {
+  if (budgeted <= 0) return actual > 0 ? 100 : 0;
+  return Math.min((actual / budgeted) * 100, 100);
+}
+
+function render() {
+  // Title
+  const titleInput = document.getElementById('titleInput');
+  if (document.activeElement !== titleInput) {
+    titleInput.value = state.title;
+  }
+
+  // Income
+  const incomeInput = document.getElementById('incomeInput');
+  if (document.activeElement !== incomeInput) {
+    incomeInput.value = fmt(state.income);
+  }
+
+  // Summary
+  const totalBudgeted = state.categories.reduce((s, c) => s + c.budgeted, 0);
+  const totalSpent = state.categories.reduce((s, c) => s + c.actual, 0);
+  const remaining = state.income - totalSpent;
+
+  document.getElementById('totalBudgeted').textContent = '$' + fmt(totalBudgeted);
+  document.getElementById('totalSpent').textContent = '$' + fmt(totalSpent);
+
+  const remEl = document.getElementById('totalRemaining');
+  remEl.textContent = (remaining < 0 ? '-$' + fmt(Math.abs(remaining)) : '$' + fmt(remaining));
+  remEl.className = 'value ' + (remaining >= 0 ? 'positive' : 'negative');
+
+  // Rows
+  const container = document.getElementById('categoryRows');
+  const existingRows = container.querySelectorAll('.category-row');
+  
+  // Rebuild only if count changed
+  if (existingRows.length !== state.categories.length) {
+    container.innerHTML = '';
+    state.categories.forEach((cat, i) => {
+      container.appendChild(createRow(cat, i));
+    });
+  } else {
+    // Update in place
+    state.categories.forEach((cat, i) => {
+      updateRow(existingRows[i], cat, i);
+    });
+  }
+}
+
+function createRow(cat, index) {
+  const row = document.createElement('div');
+  row.className = 'category-row';
+  row.dataset.index = index;
+
+  const left = cat.budgeted - cat.actual;
+  const pctClass = getProgressClass(cat.actual, cat.budgeted);
+  const pct = getProgressPct(cat.actual, cat.budgeted);
+  const leftClass = left > 0 ? 'positive' : left < 0 ? 'negative' : 'zero';
+
+  row.innerHTML = `
+    <div class="cat-name-cell">
+      <input class="cat-name-input" type="text" value="${escHtml(cat.name)}" data-field="name">
+      <div class="progress-track"><div class="progress-fill ${pctClass}" style="width:${pct}%"></div></div>
+    </div>
+    <input class="money-input" type="text" value="${fmt(cat.budgeted)}" data-field="budgeted" inputmode="decimal">
+    <input class="money-input" type="text" value="${fmt(cat.actual)}" data-field="actual" inputmode="decimal">
+    <div class="left-value ${leftClass}">${left < 0 ? '-$' + fmt(Math.abs(left)) : '$' + fmt(left)}</div>
+    <button class="delete-btn" title="Remove category">&times;</button>
+  `;
+
+  // Events
+  const nameInput = row.querySelector('[data-field="name"]');
+  nameInput.addEventListener('input', () => {
+    state.categories[index].name = nameInput.value;
+    saveState();
+  });
+
+  const budgetInput = row.querySelector('[data-field="budgeted"]');
+  budgetInput.addEventListener('change', () => {
+    state.categories[index].budgeted = parseMoney(budgetInput.value);
+    saveState();
+    render();
+  });
+  budgetInput.addEventListener('focus', () => budgetInput.select());
+
+  const actualInput = row.querySelector('[data-field="actual"]');
+  actualInput.addEventListener('change', () => {
+    state.categories[index].actual = parseMoney(actualInput.value);
+    saveState();
+    render();
+  });
+  actualInput.addEventListener('focus', () => actualInput.select());
+
+  row.querySelector('.delete-btn').addEventListener('click', () => {
+    state.categories.splice(index, 1);
+    saveState();
+    render();
+  });
+
+  return row;
+}
+
+function updateRow(row, cat, index) {
+  row.dataset.index = index;
+  const left = cat.budgeted - cat.actual;
+  const pctClass = getProgressClass(cat.actual, cat.budgeted);
+  const pct = getProgressPct(cat.actual, cat.budgeted);
+  const leftClass = left > 0 ? 'positive' : left < 0 ? 'negative' : 'zero';
+
+  const nameInput = row.querySelector('[data-field="name"]');
+  if (document.activeElement !== nameInput) nameInput.value = cat.name;
+
+  const budgetInput = row.querySelector('[data-field="budgeted"]');
+  if (document.activeElement !== budgetInput) budgetInput.value = fmt(cat.budgeted);
+
+  const actualInput = row.querySelector('[data-field="actual"]');
+  if (document.activeElement !== actualInput) actualInput.value = fmt(cat.actual);
+
+  const fill = row.querySelector('.progress-fill');
+  fill.className = 'progress-fill ' + pctClass;
+  fill.style.width = pct + '%';
+
+  const leftEl = row.querySelector('.left-value');
+  leftEl.className = 'left-value ' + leftClass;
+  leftEl.textContent = left < 0 ? '-$' + fmt(Math.abs(left)) : '$' + fmt(left);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Title input
+document.getElementById('titleInput').addEventListener('input', function() {
+  state.title = this.value || DEFAULT_TITLE;
+  saveState();
+});
+
+// Income input
+document.getElementById('incomeInput').addEventListener('change', function() {
+  state.income = parseMoney(this.value);
+  saveState();
+  render();
+});
+document.getElementById('incomeInput').addEventListener('focus', function() { this.select(); });
+
+// Add category
+function addCategory() {
+  const nameEl = document.getElementById('addName');
+  const budgetEl = document.getElementById('addBudget');
+  const actualEl = document.getElementById('addActual');
+  const name = nameEl.value.trim();
+  if (!name) { nameEl.focus(); return; }
+  state.categories.push({
+    name,
+    budgeted: parseMoney(budgetEl.value),
+    actual: parseMoney(actualEl.value),
+  });
+  nameEl.value = '';
+  budgetEl.value = '';
+  actualEl.value = '';
+  nameEl.focus();
+  saveState();
+  render();
+}
+
+['addName', 'addBudget', 'addActual'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addCategory(); }
+  });
+});
+
+// Add button
+document.getElementById('btnAdd').addEventListener('click', addCategory);
+
+// Confirm dialog
+let dialogResolve = null;
+function confirm(msg) {
+  return new Promise(resolve => {
+    dialogResolve = resolve;
+    document.getElementById('dialogMsg').textContent = msg;
+    document.getElementById('dialogOverlay').classList.add('active');
+  });
+}
+document.getElementById('dialogConfirm').addEventListener('click', () => {
+  document.getElementById('dialogOverlay').classList.remove('active');
+  if (dialogResolve) dialogResolve(true);
+});
+document.getElementById('dialogCancel').addEventListener('click', () => {
+  document.getElementById('dialogOverlay').classList.remove('active');
+  if (dialogResolve) dialogResolve(false);
+});
+
+// Reset
+document.getElementById('btnReset').addEventListener('click', async () => {
+  if (await confirm('Reset all categories and income to defaults? This cannot be undone.')) {
+    state = { title: DEFAULT_TITLE, income: DEFAULT_INCOME, categories: deepClone(DEFAULT_CATEGORIES) };
+    saveState();
+    render();
+  }
+});
+
+// Clear actuals
+document.getElementById('btnClear').addEventListener('click', async () => {
+  if (await confirm('Clear all actual amounts to $0? This cannot be undone.')) {
+    state.categories.forEach(c => c.actual = 0);
+    saveState();
+    render();
+  }
+});
+
+// Init
+render();
+</script>
+</body>
+</html>

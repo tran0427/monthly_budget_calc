@@ -640,19 +640,19 @@ const STORAGE_KEY = 'budgetTrackerData_v2';
 const DEFAULT_TITLE = 'Monthly Budget';
 const DEFAULT_INCOME = 4500;
 const DEFAULT_CATEGORIES = [
-  { name: 'Rent', budgeted: 1725, actual: 1725 },
-  { name: 'Utilities', budgeted: 200, actual: 180 },
-  { name: 'Auto insurance', budgeted: 188, actual: 188 },
-  { name: 'Student loan', budgeted: 316, actual: 316 },
-  { name: 'Credit cards (all minimums)', budgeted: 460, actual: 460 },
-  { name: 'Private school tuition', budgeted: 850, actual: 850 },
-  { name: 'Gymnastics', budgeted: 240, actual: 240 },
-  { name: 'Dance (incl. technique classes)', budgeted: 300, actual: 207 },
-  { name: 'Sweet 16 decorator', budgeted: 200, actual: 200 },
-  { name: 'Internet', budgeted: 50, actual: 50 },
-  { name: 'Cell phone', budgeted: 70, actual: 70 },
-  { name: 'Subscriptions', budgeted: 26, actual: 26 },
-  { name: 'Food (groceries + eating out)', budgeted: 380, actual: 380 },
+  { name: 'Rent', budgeted: 1725, actual: 0 },
+  { name: 'Utilities', budgeted: 200, actual: 0 },
+  { name: 'Auto insurance', budgeted: 188, actual: 0 },
+  { name: 'Student loan', budgeted: 316, actual: 0 },
+  { name: 'Credit cards (all minimums)', budgeted: 460, actual: 0 },
+  { name: 'Private school tuition', budgeted: 850, actual: 0 },
+  { name: 'Gymnastics', budgeted: 240, actual: 0 },
+  { name: 'Dance (incl. technique classes)', budgeted: 300, actual: 0 },
+  { name: 'Sweet 16 decorator', budgeted: 200, actual: 0 },
+  { name: 'Internet', budgeted: 50, actual: 0 },
+  { name: 'Cell phone', budgeted: 70, actual: 0 },
+  { name: 'Subscriptions', budgeted: 26, actual: 0 },
+  { name: 'Food (groceries + eating out)', budgeted: 380, actual: 0 },
   { name: 'Misc', budgeted: 150, actual: 0 },
 ];
 
@@ -768,7 +768,7 @@ function createRow(cat, index) {
       <div class="progress-track"><div class="progress-fill ${pctClass}" style="width:${pct}%"></div></div>
     </div>
     <input class="money-input" type="text" value="${fmt(cat.budgeted)}" data-field="budgeted" inputmode="decimal">
-    <input class="money-input" type="text" value="${fmt(cat.actual)}" data-field="actual" inputmode="decimal">
+    <input class="money-input" type="text" value="${cat.actual !== 0 ? fmt(cat.actual) : ''}" data-field="actual" inputmode="decimal">
     <div class="left-value ${leftClass}">${left < 0 ? '-$' + fmt(Math.abs(left)) : '$' + fmt(left)}</div>
     <button class="delete-btn" title="Remove category">&times;</button>
   `;
@@ -819,7 +819,7 @@ function updateRow(row, cat, index) {
   if (document.activeElement !== budgetInput) budgetInput.value = fmt(cat.budgeted);
 
   const actualInput = row.querySelector('[data-field="actual"]');
-  if (document.activeElement !== actualInput) actualInput.value = fmt(cat.actual);
+  if (document.activeElement !== actualInput) actualInput.value = cat.actual !== 0 ? fmt(cat.actual) : '';
 
   const fill = row.querySelector('.progress-fill');
   fill.className = 'progress-fill ' + pctClass;

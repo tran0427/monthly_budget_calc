@@ -541,6 +541,36 @@ body {
 }
 .dialog-btn.confirm:hover { opacity: 0.9; }
 
+.cc-grid, .category-row.cc-grid {
+  grid-template-columns: 1fr 120px 120px 120px 100px 36px;
+}
+.cc-add-grid {
+  grid-template-columns: 1fr 120px 120px 120px auto;
+}
+.cc-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+  margin-top: 1.75rem;
+}
+.cc-balance-total {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.cc-balance-total strong {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--yellow);
+  font-weight: 700;
+}
+.cc-empty {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.cc-empty.hidden { display: none; }
+
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .container { padding: 1.25rem 1rem 3rem; }
@@ -552,6 +582,13 @@ body {
     padding: 0.6rem 0.85rem;
   }
   .add-row { grid-template-columns: 1fr; }
+  .cc-grid, .category-row.cc-grid {
+    grid-template-columns: 1fr 78px 78px 78px 70px 28px;
+    padding: 0.6rem 0.5rem;
+    gap: 0.35rem;
+  }
+  .cc-add-grid { grid-template-columns: 1fr; }
+  .cc-heading { flex-direction: column; gap: 0.35rem; }
   .add-btn { width: 100%; }
   .income-section { flex-direction: column; align-items: stretch; }
   .delete-btn { opacity: 0.5; }
@@ -626,6 +663,36 @@ body {
     </div>
   </div>
 
+  <!-- Credit Cards -->
+  <div class="cc-heading">
+    <span class="section-label" style="margin:0">Credit cards</span>
+    <span class="cc-balance-total">Total balance: <strong id="ccBalanceTotal">$0</strong></span>
+  </div>
+  <div class="table-card">
+    <div class="table-header cc-grid">
+      <span>Card</span>
+      <span>Balance</span>
+      <span>Min. payment</span>
+      <span>Actual</span>
+      <span>Left</span>
+      <span></span>
+    </div>
+    <div id="cardRows"></div>
+    <div class="cc-empty" id="ccEmpty">No cards yet &mdash; add one below.</div>
+  </div>
+
+  <!-- Add Card -->
+  <div class="add-section">
+    <div class="section-label">Add a credit card</div>
+    <div class="add-row cc-add-grid">
+      <input type="text" class="add-input" id="addCardName" placeholder="Card name">
+      <input type="text" class="add-input mono" id="addCardBalance" placeholder="Balance" inputmode="decimal">
+      <input type="text" class="add-input mono" id="addCardMin" placeholder="Min. pmt" inputmode="decimal">
+      <input type="text" class="add-input mono" id="addCardActual" placeholder="Paid" inputmode="decimal">
+      <button class="add-btn" id="btnAddCard" title="Add card">+</button>
+    </div>
+  </div>
+
   <!-- Actions -->
   <div class="actions">
     <button class="action-btn" id="btnReset">Reset to defaults</button>
@@ -635,26 +702,15 @@ body {
 </div>
 
 <script>
-const STORAGE_KEY = 'budgetTrackerData_v3';
+const STORAGE_KEY = 'budgetTrackerData_v4';
 
 const DEFAULT_TITLE = 'Monthly Budget';
 const DEFAULT_INCOME = 5000;
 const DEFAULT_CATEGORIES = [
   { name: 'Rent', budgeted: 1725, actual: 1725 },
   { name: 'SoFi student loan', budgeted: 316, actual: 316 },
-  { name: 'Amex ...0083', budgeted: 505, actual: 505 },
-  { name: 'Navy Federal ...8929', budgeted: 620, actual: 620 },
   { name: 'Baxter Credit Union', budgeted: 203, actual: 203 },
-  { name: 'Navy Federal ...0659', budgeted: 177, actual: 177 },
-  { name: 'JPMCB card', budgeted: 41, actual: 41 },
-  { name: 'Amex ...1333', budgeted: 40, actual: 40 },
-  { name: 'Amex ...5313', budgeted: 40, actual: 40 },
-  { name: 'FNB Omaha', budgeted: 40, actual: 40 },
-  { name: 'Citicards ...0342', budgeted: 35, actual: 35 },
-  { name: 'Venmo / Synchrony', budgeted: 30, actual: 30 },
-  { name: 'Citi TY MC', budgeted: 29, actual: 29 },
   { name: 'PA State Employees CU', budgeted: 25, actual: 25 },
-  { name: 'Citicards ...2845', budgeted: 3, actual: 3 },
   { name: 'Private school tuition', budgeted: 850, actual: 850 },
   { name: 'Gymnastics', budgeted: 240, actual: 240 },
   { name: 'Dance (incl. technique classes)', budgeted: 225, actual: 225 },
@@ -667,6 +723,7 @@ const DEFAULT_CATEGORIES = [
   { name: 'Internet', budgeted: 50, actual: 50 },
   { name: 'Subscriptions', budgeted: 36, actual: 36 },
 ];
+const DEFAULT_CARDS = [];
 
 let state = loadState();
 
@@ -679,11 +736,12 @@ function loadState() {
       const parsed = JSON.parse(raw);
       if (parsed.income !== undefined && Array.isArray(parsed.categories)) {
         if (!parsed.title) parsed.title = DEFAULT_TITLE;
+        if (!Array.isArray(parsed.cards)) parsed.cards = [];
         return parsed;
       }
     }
   } catch(e) {}
-  return { title: DEFAULT_TITLE, income: DEFAULT_INCOME, categories: deepClone(DEFAULT_CATEGORIES) };
+  return { title: DEFAULT_TITLE, income: DEFAULT_INCOME, categories: deepClone(DEFAULT_CATEGORIES), cards: deepClone(DEFAULT_CARDS) };
 }
 
 function saveState() {
@@ -734,9 +792,13 @@ function render() {
     incomeInput.value = fmt(state.income);
   }
 
-  // Summary
-  const totalBudgeted = state.categories.reduce((s, c) => s + c.budgeted, 0);
-  const totalSpent = state.categories.reduce((s, c) => s + c.actual, 0);
+  // Summary — categories AND cards feed the same totals
+  const catBudgeted = state.categories.reduce((s, c) => s + c.budgeted, 0);
+  const catSpent = state.categories.reduce((s, c) => s + c.actual, 0);
+  const cardBudgeted = state.cards.reduce((s, c) => s + c.budgeted, 0);
+  const cardSpent = state.cards.reduce((s, c) => s + c.actual, 0);
+  const totalBudgeted = catBudgeted + cardBudgeted;
+  const totalSpent = catSpent + cardSpent;
   const remaining = state.income - totalSpent;
 
   document.getElementById('totalBudgeted').textContent = '$' + fmt(totalBudgeted);
@@ -745,6 +807,9 @@ function render() {
   const remEl = document.getElementById('totalRemaining');
   remEl.textContent = (remaining < 0 ? '-$' + fmt(Math.abs(remaining)) : '$' + fmt(remaining));
   remEl.className = 'value ' + (remaining >= 0 ? 'positive' : 'negative');
+
+  const ccBal = state.cards.reduce((s, c) => s + (c.balance || 0), 0);
+  document.getElementById('ccBalanceTotal').textContent = '$' + fmt(ccBal);
 
   // Rows
   const container = document.getElementById('categoryRows');
@@ -762,6 +827,92 @@ function render() {
       updateRow(existingRows[i], cat, i);
     });
   }
+
+  // Card rows
+  const cardContainer = document.getElementById('cardRows');
+  const existingCards = cardContainer.querySelectorAll('.category-row');
+  if (existingCards.length !== state.cards.length) {
+    cardContainer.innerHTML = '';
+    state.cards.forEach((card, i) => {
+      cardContainer.appendChild(createCardRow(card, i));
+    });
+  } else {
+    state.cards.forEach((card, i) => {
+      updateCardRow(existingCards[i], card, i);
+    });
+  }
+  document.getElementById('ccEmpty').classList.toggle('hidden', state.cards.length > 0);
+}
+
+function createCardRow(card, index) {
+  const row = document.createElement('div');
+  row.className = 'category-row cc-grid';
+  row.dataset.index = index;
+
+  const left = card.budgeted - card.actual;
+  const pctClass = getProgressClass(card.actual, card.budgeted);
+  const pct = getProgressPct(card.actual, card.budgeted);
+  const leftClass = left > 0 ? 'positive' : left < 0 ? 'negative' : 'zero';
+
+  row.innerHTML = `
+    <div class="cat-name-cell">
+      <input class="cat-name-input" type="text" value="${escHtml(card.name)}" data-field="name">
+      <div class="progress-track"><div class="progress-fill ${pctClass}" style="width:${pct}%"></div></div>
+    </div>
+    <input class="money-input" type="text" value="${fmt(card.balance || 0)}" data-field="balance" inputmode="decimal">
+    <input class="money-input" type="text" value="${fmt(card.budgeted)}" data-field="budgeted" inputmode="decimal">
+    <input class="money-input" type="text" value="${fmt(card.actual)}" data-field="actual" inputmode="decimal">
+    <div class="left-value ${leftClass}">${left < 0 ? '-$' + fmt(Math.abs(left)) : '$' + fmt(left)}</div>
+    <button class="delete-btn" title="Remove card">&times;</button>
+  `;
+
+  const nameInput = row.querySelector('[data-field="name"]');
+  nameInput.addEventListener('input', () => {
+    state.cards[index].name = nameInput.value;
+    saveState();
+  });
+
+  ['balance', 'budgeted', 'actual'].forEach(field => {
+    const el = row.querySelector(`[data-field="${field}"]`);
+    el.addEventListener('change', () => {
+      state.cards[index][field] = parseMoney(el.value);
+      saveState();
+      render();
+    });
+    el.addEventListener('focus', () => el.select());
+  });
+
+  row.querySelector('.delete-btn').addEventListener('click', () => {
+    state.cards.splice(index, 1);
+    saveState();
+    render();
+  });
+
+  return row;
+}
+
+function updateCardRow(row, card, index) {
+  row.dataset.index = index;
+  const left = card.budgeted - card.actual;
+  const pctClass = getProgressClass(card.actual, card.budgeted);
+  const pct = getProgressPct(card.actual, card.budgeted);
+  const leftClass = left > 0 ? 'positive' : left < 0 ? 'negative' : 'zero';
+
+  const nameInput = row.querySelector('[data-field="name"]');
+  if (document.activeElement !== nameInput) nameInput.value = card.name;
+
+  [['balance', card.balance || 0], ['budgeted', card.budgeted], ['actual', card.actual]].forEach(([f, v]) => {
+    const el = row.querySelector(`[data-field="${f}"]`);
+    if (document.activeElement !== el) el.value = fmt(v);
+  });
+
+  const fill = row.querySelector('.progress-fill');
+  fill.className = 'progress-fill ' + pctClass;
+  fill.style.width = pct + '%';
+
+  const leftEl = row.querySelector('.left-value');
+  leftEl.className = 'left-value ' + leftClass;
+  leftEl.textContent = left < 0 ? '-$' + fmt(Math.abs(left)) : '$' + fmt(left);
 }
 
 function createRow(cat, index) {
@@ -889,6 +1040,37 @@ function addCategory() {
 // Add button
 document.getElementById('btnAdd').addEventListener('click', addCategory);
 
+// Add credit card
+function addCard() {
+  const nameEl = document.getElementById('addCardName');
+  const balEl = document.getElementById('addCardBalance');
+  const minEl = document.getElementById('addCardMin');
+  const actEl = document.getElementById('addCardActual');
+  const name = nameEl.value.trim();
+  if (!name) { nameEl.focus(); return; }
+  state.cards.push({
+    name,
+    balance: parseMoney(balEl.value),
+    budgeted: parseMoney(minEl.value),
+    actual: parseMoney(actEl.value),
+  });
+  nameEl.value = '';
+  balEl.value = '';
+  minEl.value = '';
+  actEl.value = '';
+  nameEl.focus();
+  saveState();
+  render();
+}
+
+['addCardName', 'addCardBalance', 'addCardMin', 'addCardActual'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addCard(); }
+  });
+});
+
+document.getElementById('btnAddCard').addEventListener('click', addCard);
+
 // Confirm dialog
 let dialogResolve = null;
 function confirm(msg) {
@@ -910,7 +1092,7 @@ document.getElementById('dialogCancel').addEventListener('click', () => {
 // Reset
 document.getElementById('btnReset').addEventListener('click', async () => {
   if (await confirm('Reset all categories and income to defaults? This cannot be undone.')) {
-    state = { title: DEFAULT_TITLE, income: DEFAULT_INCOME, categories: deepClone(DEFAULT_CATEGORIES) };
+    state = { title: DEFAULT_TITLE, income: DEFAULT_INCOME, categories: deepClone(DEFAULT_CATEGORIES), cards: deepClone(DEFAULT_CARDS) };
     saveState();
     render();
   }
@@ -920,6 +1102,7 @@ document.getElementById('btnReset').addEventListener('click', async () => {
 document.getElementById('btnClear').addEventListener('click', async () => {
   if (await confirm('Clear all actual amounts to $0? This cannot be undone.')) {
     state.categories.forEach(c => c.actual = 0);
+    state.cards.forEach(c => c.actual = 0);
     saveState();
     render();
   }
